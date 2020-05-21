@@ -2,10 +2,66 @@ import java.util.*;
 import java.math.*;
 import java.io.*;
 
-public class Solution {
-    // 1/
-    public static void main(String[] args) throws IOException {
+// 1.LinkedList本质上是链表，查找耗时O(N)，插入、删除在预先查找的情况下也是O(N)
+// 2.树状数组，存储每个元素的数量 (1)查找到相应的位置 通过前缀和找到元素坐标 + 执行删除操作 n *（logn * logn + logn) (2)执行插入操作
+// 3.使用快速IO
 
+public class Multiset1800 {
+    static int n = (int)1e6;
+    static int[] bit;
+
+    static int sum(int i) {
+        int s = 0;
+        while(i > 0) {
+            s += bit[i];
+            i -= i & (-i);
+        }
+        return s;
+    }
+
+    static void add(int i, int val) {
+        while(i <= n) {
+            bit[i] += val;
+            i += i & (-i);
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        Reader rd = new Reader();
+        int N = rd.nextInt();
+        int Q = rd.nextInt();
+
+        bit = new int[n + 1];
+        for(int i = 0; i < N; i++) {
+            int val = rd.nextInt();
+            add(val, 1);
+        }
+
+        for(int q = 0; q < Q; q++) {
+            int val = rd.nextInt();
+            if(val < 0) {
+                int l = 0, r = n;
+                while(l < r) {
+                    int mid = (l + r) >> 1;
+                    if(sum(mid) < -val) l = mid + 1;
+                    else r = mid;
+                }
+                add(l, -1);
+            } else {
+                add(val, 1);
+            }
+        }
+
+        if(sum(n) == 0) System.out.println(0);
+        else {
+            int l = 0, r = n;
+            while(l < r) {
+                int mid = (l + r) >> 1;
+                if(sum(mid) == 0) l = mid + 1;
+                else r = mid;
+            }
+            System.out.println(l);
+        }
     }
 
     //Fast IO class
