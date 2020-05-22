@@ -1,75 +1,63 @@
 import java.io.*;
 import java.util.*;
 
-// 刚开始想到构成点和边，在此基础上做dijistra，但实际上边的权重是随着方案动态变化的，所以不可行
-// 用优先队列BFS，枚举每个点的不同高度，以cost少为优先进行bfs，最后问题规模将是指数级，不可行
-// 参考 https://dreamfarer.github.io/post/n4_Nmfn6u/ 所有点中必然有一个点是不动的，用O(n^2)去枚举这个不动的点
-// 再做优先队列BFS，
-
 public class Solution {
-    static class Node implements Comparable<Node>{
-        int x, y;
-        long height, cost;
-
-        public Node(int x, int y, long height, long cost) {
-            this.x = x;
-            this.y = y;
-            this.height = height;
-            this.cost = cost;
-        }
-
-        @Override
-        public int compareTo(Node node) {
-            return this.cost < node.cost ? -1 : 1;
-        }
+    public static int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    public static char reverse(char i) {
+        if(i == '1') return '0';
+        else return '1';
     }
-
-    public static int M;
-    public static int[][] dirs = {{-1, 0}, {0, -1}};
-    public static int encode(int x, int y) {
-        return x * M + y;
-    }
-
     public static void main(String[] args) throws IOException {
-         Reader rd = new Reader();
-         int T = rd.nextInt();
-         for(int t = 0; t < T; t++) {
-             int n = rd.nextInt(), m = rd.nextInt();
-             long[][] height = new long[n][m];
-             for(int i = 0; i < n; i++) {
-                 for(int j = 0; j < m; j++) {
-                     height[i][j] = rd.nextLong();
-                 }
-             }
+        Reader rd = new Reader();
+        int n = rd.nextInt(),  k = rd.nextInt();
+        int ans = 0;
+        int[][] dis = new int[n][2];
+        for(int i = 0; i < n; i++) {
+            int red = rd.nextInt();
+            int blue = rd.nextInt();
+            ans += red / k;
+            dis[i][0] = red % k;
+            ans += blue / k;
+            dis[i][1] = blue % k;
+        }
 
-             M = m;
+        // 前n个，剩余几个red
+        int[][] dp = new int[n + 1][k];
+        for(int[] arr : dp) Arrays.fill(arr, -1);
+        dp[0][0] = 0;
+        int[] sum = new int[n + 1];
+        for(int i = 1; i <= n; i++) {
+            sum[i] = sum[i - 1] + dis[i - 1][0] + dis[i - 1][1];
+            for(int pre = 0; pre < k; pre++) {
+                if(dp[i - 1][pre] == -1)    continue;
+                for(int cur = 0; cur < k; cur++) {
+                    int num = dp[i - 1][pre];
+                    int red = pre + dis[i - 1][0];
+                    int blue = (sum[i - 1] - pre - dp[i - 1][pre] * k) + dis[i - 1][1];
+                    red -= cur;
+                    // red能分的就分掉
+                    num += red / k;
+                    red %= k;
+                    // 剩下的和蓝色一起成桶
+                    if(red > dis[i - 1][0]) continue;
+                    if(red != 0) {
+                        num += 1;
+                        if(red + blue < k) continue;
+                        red = 0;
+                        blue -= k - red;
+                    }
+                    // 分掉剩下的蓝色
+                    num += blue / k;
+                    if(num != 0) System.out.println(i + " " + pre + " " + cur);
+                    blue %= k;
+                    dp[i][cur] = Math.max(num, dp[i][cur]);
+                }
+            }
+        }
 
-             PriorityQueue<Node> que = new PriorityQueue<>();
-             que.add(new Node(n - 1, m - 1, height[n - 1][m - 1], 0));
-
-             while(!que.isEmpty()) {
-                 Node node = que.poll();
-                 if(node.x == 0 && node.y == 0) {
-                     System.out.println(node.cost);
-                     break;
-                 }
-                 for(int[] dir : dirs) {
-                     int nx = dir[0] + node.x;
-                     int ny = dir[1] + node.y;
-                     if(nx < 0 || ny < 0)   continue;
-                     long h = height[nx][ny];
-                     long c = node.cost;
-                     if(h > node.height - 1) {
-                         c += h - node.height + 1;
-                     } else {
-                        c += node.height - h - 1;
-                     }
-                     h = node.height - 1;
-                     que.add(new Node(nx, ny, h, c));
-                 }
-             }
-
-         }
+        int ansp = 0;
+        for(int cur = 0; cur < k; cur++) ansp = Math.max(ansp, dp[n][cur]);
+        System.out.println(ans + " " + ansp);
     }
 
     //Fast IO class
