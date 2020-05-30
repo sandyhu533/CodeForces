@@ -2,62 +2,56 @@ import java.io.*;
 import java.util.*;
 
 public class Solution {
-    public static int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-    public static char reverse(char i) {
-        if(i == '1') return '0';
-        else return '1';
-    }
     public static void main(String[] args) throws IOException {
         Reader rd = new Reader();
         int n = rd.nextInt(),  k = rd.nextInt();
-        int ans = 0;
         int[][] dis = new int[n][2];
         for(int i = 0; i < n; i++) {
             int red = rd.nextInt();
             int blue = rd.nextInt();
-            ans += red / k;
-            dis[i][0] = red % k;
-            ans += blue / k;
-            dis[i][1] = blue % k;
+            dis[i][0] = red;
+            dis[i][1] = blue;
         }
 
         // 前n个，剩余几个red
-        int[][] dp = new int[n + 1][k];
-        for(int[] arr : dp) Arrays.fill(arr, -1);
+        long[][] dp = new long[n + 1][k];
+        long[][] b = new long[n + 1][k];
+        for(long[] arr : dp) Arrays.fill(arr, -1);
         dp[0][0] = 0;
-        int[] sum = new int[n + 1];
+        long[] sum = new long[n + 1];
         for(int i = 1; i <= n; i++) {
             sum[i] = sum[i - 1] + dis[i - 1][0] + dis[i - 1][1];
             for(int pre = 0; pre < k; pre++) {
                 if(dp[i - 1][pre] == -1)    continue;
                 for(int cur = 0; cur < k; cur++) {
-                    int num = dp[i - 1][pre];
-                    int red = pre + dis[i - 1][0];
-                    int blue = (sum[i - 1] - pre - dp[i - 1][pre] * k) + dis[i - 1][1];
-                    red -= cur;
+                    long num = dp[i - 1][pre];
+                    long red = pre + dis[i - 1][0] - cur;
+                    {if(red < 0) break;}
+                    long blue = b[i - 1][pre] + dis[i - 1][1];
                     // red能分的就分掉
                     num += red / k;
                     red %= k;
-                    // 剩下的和蓝色一起成桶
+                    // 如果剩下的不能是都在这个桶里的，说明这个方案不行
                     if(red > dis[i - 1][0]) continue;
+                    // 剩下的和蓝色一起成桶
                     if(red != 0) {
+                        if(red + dis[i - 1][1] < k) continue;
                         num += 1;
-                        if(red + blue < k) continue;
-                        red = 0;
                         blue -= k - red;
+                        red = 0;
                     }
                     // 分掉剩下的蓝色
                     num += blue / k;
-                    if(num != 0) System.out.println(i + " " + pre + " " + cur);
                     blue %= k;
+                    b[i][cur] = blue;
                     dp[i][cur] = Math.max(num, dp[i][cur]);
                 }
             }
         }
 
-        int ansp = 0;
+        long ansp = 0;
         for(int cur = 0; cur < k; cur++) ansp = Math.max(ansp, dp[n][cur]);
-        System.out.println(ans + " " + ansp);
+        System.out.println(ansp);
     }
 
     //Fast IO class
